@@ -1,26 +1,29 @@
-#include <stdlib.h> 
 #ifndef TUI_H_
-#define TUI_H_
-#define BYTE unsigned char
+#define TUI_H_ 
+#include <stdio.h> 
+#include <stdlib.h> 
+#include <string.h> 
+
+typedef unsigned char byte;
 typedef struct {
   char ch; 
-  BYTE colors; 
+  byte color; 
+  byte attributes; 
 } Cell; 
 
 typedef struct {
   int width; 
   int height; 
   Cell** screen;
-} Buffer; 
+} Canvas; 
+
+
+Canvas new_canvas(int width, int height);
+int put_string(Canvas canvas, const char* string,int x, int y); 
+void print_canvas(Canvas canvas);
+void free_canvas(Canvas canvas);
 
 Cell space(); 
-Cell new_cell(char,BYTE);
-void print_cell(Cell);
-
-
-Buffer* new_buffer(int,int); 
-int put_string(Buffer*, const char*,int,int);
-void print_buffer(Buffer*);
-
-void free_buffer(Buffer*);
+Cell new_cell(char ch, byte fore, byte back, byte attributes); 
+void print_cell(Cell cell);
 #endif

@@ -1,52 +1,51 @@
 #include "tui.h"
-#include <stdint.h>
-#include <stdio.h>
-#include <string.h>
-Buffer *new_buffer(int width, int height) {
-  Buffer *buffer = malloc(sizeof(Buffer));
-  buffer->width = width;
-  buffer->height = height;
-  buffer->screen = malloc(sizeof(Cell *) * height);
-  for (int i = 0; i < height; i++)
-    buffer->screen[i] = malloc(sizeof(Cell) * width);
+
+Canvas new_canvas(int width, int height) {
+  Cell **screen = malloc(sizeof(Cell *) * height);
   for (int i = 0; i < height; i++) {
-    for (int j = 0; j < width; j++) {
-      buffer->screen[i][j] = space();
+    screen[i] = malloc(sizeof(Cell) * width);
+    for (int j = 0; j < width; j++)
+      screen[i][j] = space();
+  }
+  return (Canvas){width, height, screen};
+}
+
+int put_string(Canvas canvas, const char *string, int x, int y) {
+  for (int i = 0; string[i] != '\0'; i++) {
+    if (x > (canvas.width - 1)) {
+
+      if (++y > (canvas.height) - 1) {
+        return -1;
+      }
+      x = 0;
     }
+    canvas.screen[y][x++].ch = string[i];
   }
-  return buffer;
+  return 0;
 }
 
-Cell space() { return (Cell){' ', 0xF0}; }
-Cell new_cell(char ch, BYTE colors) { return (Cell){ch, colors}; }
-
-int put_string(Buffer *buffer, const char *str, int x, int y) {
-  int length = strlen(str);
-  if (length > buffer->width + x || y > buffer->height - 1) {
-    return -1;
-  }
-  for (int i = 0; i < length; i++)
-    buffer->screen[y][x + i].ch = str[i];
-  return 1;
-}
-void print_cell(Cell cell) {
-  BYTE foreground = cell.colors >> 4 & 0xF;
-  BYTE background = cell.colors & 0xF;
-  printf("\e[38;5;%dm\e[48;5;%dm%c\e[0m", foreground, background, cell.ch);
-}
-
-void print_buffer(Buffer *buffer) {
-  for (int i = 0; i < buffer->height; i++) {
-    for (int j = 0; j < buffer->width; j++) {
-      print_cell(buffer->screen[i][j]);
+void print_canvas(Canvas canvas) {
+  for (int i = 0; i < canvas.height; i++) {
+    for (int j = 0; j < canvas.width; j++) {
+      print_cell(canvas.screen[i][j]);
     }
     printf("\n");
   }
 }
-void free_buffer(Buffer *buffer) {
-  for (int i = 0; i < buffer->height; i++)
-    free(buffer->screen[i]);
-  free(buffer->screen);
 
-  free(buffer);
+void free_canvas(Canvas canvas) {
+  for (int i = 0; i < canvas.height; i++) {
+    free(canvas.screen[i]);
+  }
+  free(canvas.screen);
 }
+
+void print_cell(Cell cell) {
+  byte fore = cell.color >> 4 & 0xF;
+  byte back = cell.color & 0xF;
+  printf("\x1b[38;5;%dm\x1b[48;5;%dm", fore, back);
+  printf("%c", cell.ch);
+  printf("\x1b[0m");
+}
+
+Cell space() { return (Cell){' ', 0x0F, 0x00}; }
